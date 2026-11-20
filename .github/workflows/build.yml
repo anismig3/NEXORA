@@ -1,0 +1,51 @@
+
+name: Build NEXORA APKs
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'NEXORA_Project.zip'
+      - '.github/workflows/build.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Extract project
+        run: unzip -q NEXORA_Project.zip -d .
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK 35
+        run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+
+      - name: Build NEXORA
+        run: gradle -p NEXORA/android assembleDebug
+
+      - name: Build Demo Target
+        run: gradle -p NEXORA/demo_target assembleDebug
+
+      - name: Upload APK files
+        uses: actions/upload-artifact@v4
+        with:
+          name: NEXORA-APKs
+          path: |
+            NEXORA/android/app/build/outputs/apk/debug/*.apk
+            NEXORA/demo_target/app/build/outputs/apk/debug/*.apk
